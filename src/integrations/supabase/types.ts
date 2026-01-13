@@ -3783,6 +3783,7 @@ export type Database = {
           current_cps: number | null
           dtmf_mode: string | null
           id: string
+          is_active: boolean
           max_cps: number | null
           min_se_seconds: number | null
           name: string
@@ -3802,6 +3803,7 @@ export type Database = {
           current_cps?: number | null
           dtmf_mode?: string | null
           id?: string
+          is_active?: boolean
           max_cps?: number | null
           min_se_seconds?: number | null
           name: string
@@ -3821,6 +3823,7 @@ export type Database = {
           current_cps?: number | null
           dtmf_mode?: string | null
           id?: string
+          is_active?: boolean
           max_cps?: number | null
           min_se_seconds?: number | null
           name?: string

@@ -3,6 +3,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
+  // Dialer API (preferred - no direct Supabase access needed)
+  dialerApi: {
+    url: process.env.DIALER_API_URL || '',
+    key: process.env.DIALER_API_KEY || '',
+  },
+  // Supabase (fallback if API not configured)
   supabase: {
     url: process.env.SUPABASE_URL || '',
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
@@ -32,6 +38,11 @@ export const config = {
 };
 
 export function validateConfig(): void {
-  if (!config.supabase.url) throw new Error('SUPABASE_URL is required');
-  if (!config.supabase.serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required');
+  // Prefer API, fallback to direct Supabase
+  const hasApi = config.dialerApi.url && config.dialerApi.key;
+  const hasSupabase = config.supabase.url && config.supabase.serviceRoleKey;
+  
+  if (!hasApi && !hasSupabase) {
+    throw new Error('Either DIALER_API_URL+DIALER_API_KEY or SUPABASE_URL+SUPABASE_SERVICE_ROLE_KEY required');
+  }
 }

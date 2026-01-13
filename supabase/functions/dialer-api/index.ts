@@ -269,7 +269,7 @@ async function getActiveCampaigns(accountId?: string) {
   let query = supabase
     .from('campaigns')
     .select('*')
-    .eq('status', 'active');
+    .eq('status', 'ACTIVE');
 
   if (accountId) {
     query = query.eq('account_id', accountId);

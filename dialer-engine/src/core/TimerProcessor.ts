@@ -1,4 +1,6 @@
 import { getSupabaseClient } from '../database/SupabaseClient';
+import { getApiClient } from '../database/ApiClient';
+import { config } from '../config';
 import { StateMachine } from './StateMachine';
 import { CallEvent } from '../types';
 import { createChildLogger } from '../utils/Logger';
@@ -46,28 +48,44 @@ export class TimerProcessor {
 
   private async tick(): Promise<void> {
     try {
-      const client = getSupabaseClient();
+      const useApi = !!(config.dialerApi.url && config.dialerApi.key);
 
-      // Use database function to atomically get and mark expired timers
-      const { data: expiredTimers, error } = await client.rpc('process_expired_timers');
+      let expiredTimers: ExpiredTimer[] = [];
 
-      if (error) {
-        logger.error({ error }, 'Failed to fetch expired timers');
-        return;
+      if (useApi) {
+        const api = getApiClient();
+        const { data, error } = await api.processExpiredTimers();
+
+        if (error) {
+          logger.error({ error }, 'Failed to fetch expired timers via API');
+          return;
+        }
+
+        expiredTimers = (data || []) as ExpiredTimer[];
+      } else {
+        const client = getSupabaseClient();
+
+        // Use database function to atomically get and mark expired timers
+        const { data, error } = await client.rpc('process_expired_timers');
+
+        if (error) {
+          logger.error({ error }, 'Failed to fetch expired timers');
+          return;
+        }
+
+        expiredTimers = (data || []) as ExpiredTimer[];
       }
 
-      if (!expiredTimers || expiredTimers.length === 0) {
+      if (expiredTimers.length === 0) {
         return;
       }
 
       // Process each expired timer
-      for (const timer of expiredTimers as ExpiredTimer[]) {
+      for (const timer of expiredTimers) {
         await this.processTimer(timer);
       }
 
-      if (expiredTimers.length > 0) {
-        logger.info({ count: expiredTimers.length }, 'Processed expired timers');
-      }
+      logger.info({ count: expiredTimers.length }, 'Processed expired timers');
     } catch (error) {
       logger.error({ error }, 'TimerProcessor tick error');
     }

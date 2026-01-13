@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════════════
+# NIXPACKS CONFIGURATION - DIALER ENGINE
+# Force Node.js detection if Nixpacks is used
+# Preferred: Use Dockerfile build pack instead
+# ═══════════════════════════════════════════════════════════════
+
+# Force Node.js provider (not Deno)
+providers = ["node"]
+
+[phases.setup]
+nixPkgs = ["nodejs-20_x", "npm-9_x"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node dist/index.js"
+
+[variables]
+NODE_ENV = "production"

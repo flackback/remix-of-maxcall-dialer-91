@@ -1,0 +1,18 @@
+# ═══════════════════════════════════════════════════════════════
+# NIXPACKS CONFIGURATION - ROOT
+# This file prevents Nixpacks from auto-detecting Deno
+# The dialer-engine uses its own Dockerfile
+# ═══════════════════════════════════════════════════════════════
+
+# Disable auto-detection to force Dockerfile usage
+[phases.setup]
+nixPkgs = []
+
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "echo 'ERROR: Use Dockerfile build pack instead of Nixpacks. See dialer-engine/DEPLOY.md'"

@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    /* YDialer ONE - Light Theme */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.5rem;
+
+    /* Status Colors - Light */
+    --status-ready: 160 84% 39%;
+    --status-ready-foreground: 0 0% 100%;
+    --status-busy: 0 84% 60%;
+    --status-busy-foreground: 0 0% 100%;
+    --status-wrapup: 38 92% 50%;
+    --status-wrapup-foreground: 0 0% 100%;
+    --status-pause: 262 83% 58%;
+    --status-pause-foreground: 0 0% 100%;
+    --status-offline: 215 16% 47%;
+    --status-offline-foreground: 0 0% 100%;
+
+    /* Metrics - Light */
+    --metric-positive: 160 84% 39%;
+    --metric-negative: 0 84% 60%;
+    --metric-warning: 38 92% 50%;
+    --metric-neutral: 199 89% 48%;
+
+    /* Chart Colors */
+    --chart-primary: 199 89% 48%;
+    --chart-positive: 160 84% 39%;
+    --chart-negative: 0 84% 60%;
+    --chart-grid: 220 13% 91%;
+    --chart-text: 215 16% 47%;
+
+    /* Gradients - Light */
+    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 84% 30%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(220 14% 96%) 0%, hsl(220 14% 92%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
+
+    /* Shadows - Light */
+    --shadow-glow: 0 0 20px hsl(199 89% 48% / 0.2);
+    --shadow-card: 0 1px 3px hsl(220 13% 91% / 0.5), 0 1px 2px hsl(220 13% 91% / 0.3);
+    --shadow-elevated: 0 4px 12px hsl(222 47% 11% / 0.08);
+
+    /* Sidebar - Light */
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 199 89% 48%;
+  }
+
+  .dark {
+    /* YDialer ONE - Dark Enterprise Theme */
+    --background: 222 47% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 199 89% 48%;
+
+    /* Status Colors - Dark */
+    --status-ready: 160 84% 39%;
+    --status-ready-foreground: 160 84% 10%;
+    --status-busy: 0 84% 60%;
+    --status-busy-foreground: 0 84% 98%;
+    --status-wrapup: 38 92% 50%;
+    --status-wrapup-foreground: 38 92% 10%;
+    --status-pause: 262 83% 58%;
+    --status-pause-foreground: 262 83% 98%;
+    --status-offline: 215 16% 47%;
+    --status-offline-foreground: 215 16% 98%;
+
+    /* Metrics - Dark */
+    --metric-positive: 160 84% 39%;
+    --metric-negative: 0 84% 60%;
+    --metric-warning: 38 92% 50%;
+    --metric-neutral: 199 89% 48%;
+
+    /* Chart Colors - Dark */
+    --chart-primary: 199 89% 48%;
+    --chart-positive: 160 84% 39%;
+    --chart-negative: 0 84% 60%;
+    --chart-grid: 217 33% 20%;
+    --chart-text: 215 20% 55%;
+
+    /* Gradients - Dark */
+    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 84% 30%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 8%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 13%) 0%, hsl(222 47% 10%) 100%);
+
+    /* Shadows - Dark */
+    --shadow-glow: 0 0 20px hsl(199 89% 48% / 0.3);
+    --shadow-card: 0 4px 24px hsl(222 47% 4% / 0.5);
+    --shadow-elevated: 0 8px 32px hsl(222 47% 4% / 0.6);
+
+    /* Sidebar - Dark */
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 217 33% 15%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 199 89% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Status badges */
+  .status-ready {
+    @apply bg-status-ready text-status-ready-foreground;
+  }
+  
+  .status-busy {
+    @apply bg-status-busy text-status-busy-foreground;
+  }
+  
+  .status-wrapup {
+    @apply bg-status-wrapup text-status-wrapup-foreground;
+  }
+  
+  .status-pause {
+    @apply bg-status-pause text-status-pause-foreground;
+  }
+  
+  .status-offline {
+    @apply bg-status-offline text-status-offline-foreground;
+  }
+
+  /* Metric cards */
+  .metric-card {
+    @apply rounded-lg border border-border/50 p-4;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Animated pulse for active calls */
+  .pulse-active {
+    animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--status-ready) / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px hsl(var(--status-ready) / 0);
+    }
+  }
+
+  /* Scrollbar styling - Light */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--secondary));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Scrollbar oculta mas funcional */
+  .scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out forwards;
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}

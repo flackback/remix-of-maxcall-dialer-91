@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════
+# DIALER ENGINE - Docker Compose
+# For local development and standalone deployment
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────
+  # Dialer Engine Worker
+  # ─────────────────────────────────────────────────────────────
+  dialer-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: dialer-engine
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    networks:
+      - voice-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ─────────────────────────────────────────────────────────────
+  # Development Mode (optional)
+  # ─────────────────────────────────────────────────────────────
+  dialer-engine-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: dialer-engine-dev
+    profiles:
+      - dev
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+    command: ["npm", "run", "dev"]
+    networks:
+      - voice-network
+
+networks:
+  voice-network:
+    driver: bridge
+    name: dialer-voice-network

@@ -1,6 +1,8 @@
 import { TokenBucket, TokenBucketConfig } from './TokenBucket';
 import { getSupabaseClient } from '../database/SupabaseClient';
+import { getApiClient } from '../database/ApiClient';
 import { createChildLogger } from '../utils/Logger';
+import { config } from '../config';
 
 const logger = createChildLogger('BucketManager');
 
@@ -8,16 +10,63 @@ export class BucketManager {
   private buckets: Map<string, TokenBucket> = new Map();
   private syncInterval: NodeJS.Timeout | null = null;
 
+  private useApi(): boolean {
+    return !!(config.dialerApi.url && config.dialerApi.key);
+  }
+
   async initialize(): Promise<void> {
     await this.loadBucketsFromDatabase();
     
     // Sync with database every 5 seconds
     this.syncInterval = setInterval(() => this.syncToDatabase(), 5000);
     
-    logger.info({ bucketCount: this.buckets.size }, 'BucketManager initialized');
+    logger.info({ bucketCount: this.buckets.size, useApi: this.useApi() }, 'BucketManager initialized');
   }
 
   async loadBucketsFromDatabase(): Promise<void> {
+    if (this.useApi()) {
+      await this.loadBucketsViaApi();
+    } else {
+      await this.loadBucketsViaSupabase();
+    }
+  }
+
+  private async loadBucketsViaApi(): Promise<void> {
+    const api = getApiClient();
+
+    // Load trunk configs
+    const { data: trunks, error: trunksError } = await api.getTrunkConfigs();
+    
+    if (trunksError) {
+      logger.error({ error: trunksError }, 'Failed to load trunk configs via API');
+      return;
+    }
+
+    for (const trunk of trunks || []) {
+      const trunkConfig: TokenBucketConfig = {
+        maxTokens: trunk.cps_limit,
+        refillRate: trunk.cps_limit,
+      };
+      this.buckets.set(trunk.id, new TokenBucket(trunk.id, trunkConfig));
+    }
+
+    // Load bucket states
+    const { data: bucketStates } = await api.getBucketStates();
+
+    for (const state of bucketStates || []) {
+      if (!this.buckets.has(state.trunk_id)) {
+        const bucketConfig: TokenBucketConfig = {
+          maxTokens: state.max_tokens,
+          refillRate: state.refill_rate,
+        };
+        this.buckets.set(state.trunk_id, new TokenBucket(state.trunk_id, bucketConfig));
+      }
+    }
+
+    logger.info({ bucketCount: this.buckets.size }, 'Loaded buckets from API');
+  }
+
+  private async loadBucketsViaSupabase(): Promise<void> {
     const client = getSupabaseClient();
     
     const { data: trunks, error } = await client
@@ -31,27 +80,24 @@ export class BucketManager {
     }
 
     for (const trunk of trunks || []) {
-      const config: TokenBucketConfig = {
+      const trunkConfig: TokenBucketConfig = {
         maxTokens: trunk.max_cps,
         refillRate: trunk.max_cps,
       };
-      this.buckets.set(trunk.id, new TokenBucket(trunk.id, config));
+      this.buckets.set(trunk.id, new TokenBucket(trunk.id, trunkConfig));
     }
 
-    // Also load persisted bucket state
     const { data: bucketStates } = await client
       .from('rate_limit_buckets')
       .select('trunk_id, tokens, max_tokens, refill_rate');
 
     for (const state of bucketStates || []) {
-      if (this.buckets.has(state.trunk_id)) {
-        // Bucket already exists with fresh config
-      } else {
-        const config: TokenBucketConfig = {
+      if (!this.buckets.has(state.trunk_id)) {
+        const bucketConfig: TokenBucketConfig = {
           maxTokens: state.max_tokens,
           refillRate: state.refill_rate,
         };
-        this.buckets.set(state.trunk_id, new TokenBucket(state.trunk_id, config));
+        this.buckets.set(state.trunk_id, new TokenBucket(state.trunk_id, bucketConfig));
       }
     }
 
@@ -59,6 +105,30 @@ export class BucketManager {
   }
 
   async syncToDatabase(): Promise<void> {
+    if (this.useApi()) {
+      await this.syncViaApi();
+    } else {
+      await this.syncViaSupabase();
+    }
+  }
+
+  private async syncViaApi(): Promise<void> {
+    const api = getApiClient();
+    
+    for (const [trunkId, bucket] of this.buckets) {
+      const state = bucket.getState();
+      
+      await api.upsertBucketState({
+        trunk_id: trunkId,
+        tokens: state.tokens,
+        max_tokens: state.maxTokens,
+        refill_rate: state.refillRate,
+        last_refill_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  private async syncViaSupabase(): Promise<void> {
     const client = getSupabaseClient();
     
     for (const [trunkId, bucket] of this.buckets) {

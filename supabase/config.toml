@@ -1,1 +1,4 @@
 project_id = "yxosvymvtfxqhxlkhvqz"
+
+[functions.dialer-api]
+verify_jwt = false

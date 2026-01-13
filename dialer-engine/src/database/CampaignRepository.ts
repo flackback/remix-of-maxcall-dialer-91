@@ -1,11 +1,36 @@
 import { getSupabaseClient } from './SupabaseClient';
+import { getApiClient } from './ApiClient';
 import { Campaign } from '../types';
 import { createChildLogger } from '../utils/Logger';
+import { config } from '../config';
 
 const logger = createChildLogger('CampaignRepository');
 
 export class CampaignRepository {
+  private useApi(): boolean {
+    return !!(config.dialerApi.url && config.dialerApi.key);
+  }
+
   async getActiveCampaigns(accountId?: string): Promise<Campaign[]> {
+    if (this.useApi()) {
+      return this.getActiveCampaignsViaApi(accountId);
+    }
+    return this.getActiveCampaignsViaSupabase(accountId);
+  }
+
+  private async getActiveCampaignsViaApi(accountId?: string): Promise<Campaign[]> {
+    const api = getApiClient();
+    const { data, error } = await api.getActiveCampaigns(accountId);
+
+    if (error) {
+      logger.error({ error }, 'Failed to fetch active campaigns via API');
+      throw new Error(error);
+    }
+
+    return (data || []) as Campaign[];
+  }
+
+  private async getActiveCampaignsViaSupabase(accountId?: string): Promise<Campaign[]> {
     const client = getSupabaseClient();
     
     let query = client
@@ -49,7 +74,6 @@ export class CampaignRepository {
   async getAvailableAgentsCount(campaignId: string): Promise<number> {
     const client = getSupabaseClient();
     
-    // First, get the agent IDs for this campaign
     const { data: campaignAgents, error: campaignError } = await client
       .from('campaign_agents')
       .select('agent_id')
@@ -81,6 +105,16 @@ export class CampaignRepository {
   }
 
   async getActiveCallsCount(campaignId: string): Promise<number> {
+    if (this.useApi()) {
+      const api = getApiClient();
+      const { data, error } = await api.getActiveAttempts(campaignId);
+      if (error) {
+        logger.error({ error, campaignId }, 'Failed to count active calls via API');
+        return 0;
+      }
+      return data?.length || 0;
+    }
+
     const client = getSupabaseClient();
     
     const { count, error } = await client

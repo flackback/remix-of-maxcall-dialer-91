@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,45 @@ import { z } from 'zod';
 const emailSchema = z.string().email('Email inválido');
 const passwordSchema = z.string().min(6, 'Senha deve ter no mínimo 6 caracteres');
 
+function safeParseJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    const json = atob(padded);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function isLikelyBackendKeyMismatch(): boolean {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  if (!url || !key) return false;
+
+  const host = (() => {
+    try {
+      return new URL(url).host;
+    } catch {
+      return '';
+    }
+  })();
+
+  const payload = safeParseJwtPayload(key);
+  const ref = typeof payload?.ref === 'string' ? payload.ref : undefined;
+  // URL padrão: <ref>.supabase.co (o "ref" precisa bater com o da chave)
+  if (!ref || !host) return false;
+  return !host.startsWith(`${ref}.`);
+}
 export default function Auth() {
   const navigate = useNavigate();
   const { signIn, signUp, user, isLoading } = useAuth();
   const { toast } = useToast();
-  
+  const backendKeyMismatch = useMemo(() => isLikelyBackendKeyMismatch(), []);
+  const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -61,7 +95,19 @@ export default function Auth() {
     setIsSubmitting(false);
     
     if (error) {
-      if (error.message.includes('Invalid login credentials')) {
+      const msg = error.message || '';
+
+      if (msg.toLowerCase().includes('invalid api key')) {
+        setShowApiKeyHelp(true);
+        toast({
+          title: 'Erro ao entrar',
+          description: 'Chave pública do backend inválida/mismatch. Isso acontece quando o domínio está servindo uma versão antiga do app ou com configuração de backend diferente. Limpe os dados do site e recarregue; se persistir, republique e confira o domínio conectado ao projeto.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (msg.includes('Invalid login credentials')) {
         toast({
           title: 'Erro ao entrar',
           description: 'Email ou senha incorretos',
@@ -70,7 +116,7 @@ export default function Auth() {
       } else {
         toast({
           title: 'Erro ao entrar',
-          description: error.message,
+          description: msg,
           variant: 'destructive',
         });
       }
@@ -92,7 +138,19 @@ export default function Auth() {
     setIsSubmitting(false);
     
     if (error) {
-      if (error.message.includes('already registered')) {
+      const msg = error.message || '';
+
+      if (msg.toLowerCase().includes('invalid api key')) {
+        setShowApiKeyHelp(true);
+        toast({
+          title: 'Erro ao cadastrar',
+          description: 'Chave pública do backend inválida/mismatch. Limpe os dados do site (Application → Storage → Clear site data) e recarregue. Se ainda falhar, republique e confira se o domínio está conectado a este projeto.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (msg.includes('already registered')) {
         toast({
           title: 'Email já cadastrado',
           description: 'Este email já possui uma conta. Tente fazer login.',
@@ -101,7 +159,7 @@ export default function Auth() {
       } else {
         toast({
           title: 'Erro ao cadastrar',
-          description: error.message,
+          description: msg,
           variant: 'destructive',
         });
       }
@@ -134,6 +192,16 @@ export default function Auth() {
           <span className="ml-1 rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">PRO</span>
         </div>
       </div>
+
+      {(backendKeyMismatch || showApiKeyHelp) && (
+        <div className="mb-4 w-full max-w-md rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="font-medium">Configuração do backend inconsistente</p>
+          <p className="mt-1 text-destructive/90">
+            O app está recebendo “Invalid API key”, geralmente por versão antiga no domínio ou chave pública diferente da URL do backend.
+            Limpe os dados do site e recarregue. Se persistir, republique e confira o domínio conectado ao projeto.
+          </p>
+        </div>
+      )}
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">

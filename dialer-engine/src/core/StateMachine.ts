@@ -1,6 +1,8 @@
 import { CallState, CallEvent, TransitionResult } from '../types';
 import { AttemptRepository } from '../database/AttemptRepository';
 import { getSupabaseClient } from '../database/SupabaseClient';
+import { getApiClient } from '../database/ApiClient';
+import { config } from '../config';
 import { createChildLogger } from '../utils/Logger';
 
 const logger = createChildLogger('StateMachine');
@@ -241,11 +243,39 @@ export class StateMachine {
     };
   }
 
+  private useApi(): boolean {
+    return !!(config.dialerApi.url && config.dialerApi.key);
+  }
+
   private async cancelTimers(attemptId: string, newState: CallState): Promise<string[]> {
-    const client = getSupabaseClient();
     const timerTypes = CANCEL_TIMERS_ON_STATE[newState];
-    
     if (!timerTypes) return [];
+
+    if (this.useApi()) {
+      const api = getApiClient();
+
+      // Cancel all timers for this attempt
+      if (timerTypes.includes('ALL')) {
+        const { error } = await api.cancelTimers(attemptId);
+        if (error) {
+          logger.error({ error, attemptId }, 'Failed to cancel timers via API');
+        }
+        return ['ALL'];
+      }
+
+      const results = await Promise.all(timerTypes.map(async (timerType) => {
+        const { error } = await api.cancelTimers(attemptId, timerType);
+        if (error) {
+          logger.error({ error, attemptId, timerType }, 'Failed to cancel timer via API');
+          return false;
+        }
+        return true;
+      }));
+
+      return results.some(Boolean) ? timerTypes : [];
+    }
+
+    const client = getSupabaseClient();
 
     if (timerTypes.includes('ALL')) {
       await client
@@ -267,9 +297,7 @@ export class StateMachine {
   }
 
   private async createTimers(attemptId: string, newState: CallState): Promise<string[]> {
-    const client = getSupabaseClient();
     const timers = TIMERS_BY_STATE[newState];
-    
     if (!timers) return [];
 
     const timerRecords = timers.map(t => ({
@@ -280,7 +308,28 @@ export class StateMachine {
       cancelled: false,
     }));
 
-    await client.from('call_attempt_timers').insert(timerRecords);
+    if (this.useApi()) {
+      const api = getApiClient();
+
+      const results = await Promise.all(timerRecords.map(async (timer) => {
+        const { error } = await api.createTimer(timer);
+        if (error) {
+          logger.error({ error, attemptId, timerType: timer.timer_type }, 'Failed to create timer via API');
+          return false;
+        }
+        return true;
+      }));
+
+      return results.some(Boolean) ? timers.map(t => t.type) : [];
+    }
+
+    const client = getSupabaseClient();
+    const { error } = await client.from('call_attempt_timers').insert(timerRecords);
+
+    if (error) {
+      logger.error({ error, attemptId }, 'Failed to create timers');
+      return [];
+    }
 
     return timers.map(t => t.type);
   }

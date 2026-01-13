@@ -32,10 +32,15 @@ export class DialerEngine {
   async start(): Promise<void> {
     logger.info('Starting Dialer Engine...');
 
-    // Test database connection
+    // Test database connection (only required when not using the Dialer API)
+    const hasApi = !!(config.dialerApi.url && config.dialerApi.key);
     const connected = await testConnection();
+
     if (!connected) {
-      throw new Error('Failed to connect to Supabase');
+      if (!hasApi) {
+        throw new Error('Failed to connect to Supabase');
+      }
+      logger.warn('Direct Supabase connection failed - proceeding with Dialer API only');
     }
 
     // Initialize managers
